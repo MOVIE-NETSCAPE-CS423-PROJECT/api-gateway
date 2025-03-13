@@ -1,0 +1,42 @@
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: api-gateway-deployment
+#  labels:
+#    app: api-gateway
+#spec:
+#  replicas: 3
+#  selector:
+#    matchLabels:
+#      app: api-gateway
+#  template:
+#    metadata:
+#      labels:
+#        app: api-gateway
+#    spec:
+#      initContainers:
+#        - name: init-log-dir
+#          image: busybox
+#          command: [ "/bin/sh", "-c", "mkdir -p /mnt/var/logs/api-gateway && chmod -R 777 /mnt/var/logs" ]
+#          volumeMounts:
+#            - mountPath: /mnt/var/
+#              name: volume
+#      containers:
+#        - name: api-gateway-container
+#          image: api-gateway:latest
+#          imagePullPolicy: IfNotPresent
+#          envFrom:
+#            - configMapRef:
+#                name: api-gateway-config
+#            - secretRef:
+#                name: api-gateway-secret
+#          ports:
+#            - containerPort: 8080
+#              protocol: TCP
+#          volumeMounts:
+#            - mountPath: /mnt/var/
+#              name: volume
+#      volumes:
+#        - name: volume
+#          persistentVolumeClaim:
+#            claimName: pvc

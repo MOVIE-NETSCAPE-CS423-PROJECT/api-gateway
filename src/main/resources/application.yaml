@@ -1,0 +1,57 @@
+server:
+  port: 8084
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: auth-unprotected-routes
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/auth/login, Path=/api/v1/auth/register
+        - id: auth-protected-routes
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/auth/{login}, Path=/api/v1/auth/{register}
+          filters:
+            - name: ApiGatewayFilter
+        - id: user-service-unprotected-route
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/v1/users/register
+        - id: user-service-protected-route
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/v1/users/{register}
+          filters:
+            - name: ApiGatewayFilter
+
+        - id: account-service-protected-route
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/accounts/**
+          filters:
+            - name: ApiGatewayFilter
+
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 1
+            redis-rate-limiter.burstCapacity: 1
+            redis-rate-limiter.requestedTokens: 1
+            key-resolver: "#{@userKeyResolver}"
+        - name: CircuitBreaker
+          args:
+            name: fallbackCmd
+            fallbackUri: forward:/fallback
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: TRACE
+    reactor.netty: DEBUG
+
