@@ -5,77 +5,28 @@ spring:
   cloud:
     gateway:
       routes:
-        # Public routes for auth-service (no filter)
-        - id: auth-unprotected-routes
-          uri: http://localhost:8081
-          order: 1
-          predicates:
-            - Path=/api/v1/auth/login
-            - Path=/api/v1/auth/create
-            - Path=/api/v1/auth/forgot-password/**
-            - Path=/api/v1/auth/verify-password-reset-token
-            - Path=/api/v1/auth/change-password
-
-        # Public routes for user-service (no filter)
-        - id: user-service-unprotected-route
-          uri: http://localhost:8086
-          order: 2
-          predicates:
-            - Path=/api/v1/users/register
-            - Path=/api/v1/users/verify
-
-        # Protected routes for auth-service (apply filter)
-        - id: auth-protected-routes
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/v1/auth/**
-          filters:
-            - name: ApiGatewayFilter
-
-        # Protected routes for user-service (apply filter)
-        - id: user-service-protected-route
-          uri: http://localhost:8086
-          predicates:
-            - Path=/api/v1/users/**
-          filters:
-            - name: ApiGatewayFilter
-
-        # Protected routes for account-service (apply filter)
-        - id: account-service-protected-route
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/v1/accounts/**
-          filters:
-            - name: ApiGatewayFilter
-
-
-        # Protected routes for app-managment-service (apply filter)
-        - id: app-management-service-protected-route
+        # Public routes to app-management-service
+        - id: app-management-service-unprotected-route
           uri: http://localhost:8088
           predicates:
             - Path=/api/v1/app-management/**
-          filters:
-            - name: ApiGatewayFilter
 
-      default-filters:
-        - name: RequestRateLimiter
-          args:
-            redis-rate-limiter.replenishRate: 3
-            redis-rate-limiter.burstCapacity: 3
-            redis-rate-limiter.requestedTokens: 1
-            key-resolver: "#{@userKeyResolver}"
-        - name: CircuitBreaker
-          args:
-            name: fallbackCmd
-            fallbackUri: forward:/fallback
-  data:
-    redis:
-      host: localhost
-      port: 6379
+        # Public routes to auth-service
+        - id: auth-unprotected-routes
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/auth/login,/api/v1/auth/create,/api/v1/auth/forgot-password/**,/api/v1/auth/verify-password-reset-token,/api/v1/auth/change-password
 
-logging:
-  level:
-    root: INFO
-    org.springframework.cloud.gateway: TRACE
-    reactor.netty: DEBUG
+        # Public routes to user-service
+        - id: user-service-unprotected-route
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/v1/users/register,/api/v1/users/verify
+
+        # Secured routes to auth-service, account-service, user-service, app-management-service
+        # through the Resource-server
+        - id: resource-server
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/auth/**,/api/v1/accounts/**
 
